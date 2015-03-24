@@ -191,38 +191,46 @@ static void ossd_fill_line(uint8_t data, uint8_t num)
 
 static void ossd_send_byte(uint8_t dc, uint8_t data)
 {
+#ifndef __MACOS_X__
 	uint8_t buf[2];
 	buf[0] = dc;
 	buf[1] = data;
 
 	pi2c_write(PI2C_BUS, buf, 2);
+#endif
 }
 
 static void ossd_cmd_arg(uint8_t cmd, uint8_t arg)
 {
+#ifndef __MACOS_X__
 	uint8_t data[3];
 	data[0] = OSSD_CMD;
 	data[1] = cmd;
 	data[2] = arg;
 	pi2c_write(PI2C_BUS, data, 3);
+#endif
 }
 
 static void ossd_cmd_arg2(uint8_t cmd, uint8_t arg1, uint8_t arg2)
 {
+#ifndef __MACOS_X__
 	uint8_t data[4];
 	data[0] = OSSD_CMD;
 	data[1] = cmd;
 	data[2] = arg1;
 	data[3] = arg2;
 	pi2c_write(PI2C_BUS, data, 4);
+#endif
 }
 
 static void ossd_fill_line(uint8_t data, uint8_t num)
 {
+#ifndef __MACOS_X__
 	uint8_t *buf = (uint8_t *)alloca(num+1);
 	memset(buf, data, num+1);
 	buf[0] = OSSD_DATA;
 	pi2c_write(PI2C_BUS, buf, num+1);
+#endif
 }
 
 #endif

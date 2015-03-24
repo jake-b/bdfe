@@ -33,9 +33,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <libgen.h>
+	
 #include "bdf.h"
+#ifndef __MACOS_X__
 #include "pi2c.h"
+#endif
 #include "rterm.h"
 #include "ossd_i2c.h"
 
@@ -69,6 +72,8 @@ static void usage(const char *name)
 	printf("  display A:  show converted font on SSD1306 compatible display\n");
 	printf("              using I2C bus 1, hexadecimal address A (default 3C)\n");
 	printf("  updown:     display orientation is upside down\n");
+	printf("  flip:       reverse bit order (used with rotate)\n");
+	printf("  droplast:   leave off last byte (used for fonts where last byte is always 0x00)\n");
 }
 
 int main(int argc, char **argv)
@@ -146,6 +151,13 @@ int main(int argc, char **argv)
 
 		if (arg_is(argv[i], "-u", "updown"))
 			orientation = OSSD_UPDOWN;
+
+		if (arg_is(argv[i], "-f", "flip"))
+			flags |= BDF_FLIP;
+
+		if (arg_is(argv[i], "-l", "droplast"))
+			flags |= BDF_DROPLAST;
+
 	}
 
 	file = argv[argc - 1];
@@ -161,13 +173,14 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+#ifndef __MACOS_X__
 	if (pi2c_open(PI2C_BUS) < 0) {
 		fprintf(stderr, "Unable to open i2c bus %d\n", PI2C_BUS);
 		free(font);
 		return -1;
 	}
 	pi2c_select(PI2C_BUS, i2c_address);
-
+#endif
 	ossd_font_t of;
 	of.gw   = font->gw;
 	of.gh   = font->bpg;
@@ -175,42 +188,53 @@ int main(int argc, char **argv)
 	of.gn   = (uint8_t)font->chars;
 	of.font = font->font;
 
+#ifndef __MACOS_X__
 	ossd_init(orientation);
 	ossd_set_user_font(&of, NULL);
 	ossd_select_font(OSSD_FONT_USER);
+#endif 
 
 	int gh = (of.gh + 7)/8; // glyph height in lines
 
 	char buf[16];
 	sprintf(buf, "%dx%d", of.gw, of.gh);
 	file = basename(file);
+#ifndef __MACOS_X__
 	ossd_putlx(0, -1, file, OSSD_TEXT_REVERSE);
 	ossd_putlx(8 - gh, -1, buf, OSSD_TEXT_UNDERLINE | OSSD_TEXT_OVERLINE);
+#endif
 	buf[1] = '\0';
 
 	stdin_mode(TERM_MODE_RAW);
 	fprintf(stderr, "Press any key to continue, 'q' to exit\n");
 	if (stdin_getch(-1) == 'q')	goto exit;
 
+#ifndef __MACOS_X__
 	ossd_fill_screen(0);
-
+#endif
 	do {
 		if (gidx > 0) {
 			fprintf(stderr, "Press any key to continue, 'q' to exit\n");
 			if (stdin_getch(-1) == 'q')	break;
+#ifndef __MACOS_X__			
 			ossd_fill_screen(0);
+#endif
 		}
 		for(int line = 0, l = 0; line < 8; line += gh, l++) {
 			for(int i = 0; i < (128/of.gw) && gidx < font->chars; i++, gidx++) {
 				buf[0] = gidx + of.go;
+#ifndef __MACOS_X__
 				ossd_putlx(line, i*of.gw, (const char *)buf, 0);
+#endif
 			}
 		}
 	} while(gidx < font->chars);
 
 exit:
 	stdin_mode(TERM_MODE_CAN);
+#ifndef __MACOS_X__
 	pi2c_close(PI2C_BUS);
+#endif
 	free(font);
 
 	return 0;

@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -D__MACOS_X__
 CFLAGS += -g
 #CFLAGS += -O3
 LIBS    =
@@ -19,6 +19,6 @@ clean:
 	rm -f *.o
 
 %.o: %.c $(HFILES)
-	$(CXX) -c $(CFLAGS) $< -o $@
+	$(CXX) -c $(CFLAGS) -x c++ $< -o $@
 
 

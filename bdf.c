@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <libgen.h>
 
 #include "bdf.h"
 
@@ -54,6 +55,22 @@ static char *key_arg(char *buf, const char *key, char **arg)
 	}
 
 	return NULL;
+}
+
+unsigned char reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
+// flip glyph bitmap
+static void flip_glyph(uint8_t *glyph, unsigned gw)
+{
+	for(uint8_t n = 0; n < gw; n++) {						
+		glyph[n] = reverse(glyph[n]);
+	}
+
 }
 
 // rotate glyph bitmap CCW
@@ -99,7 +116,7 @@ bdfe_t *bdf_convert(const char *name, unsigned gmin, unsigned gmax, unsigned asc
 			printf(" -r");
 		if (ascender)
 			printf(" -a %d", ascender);
-		printf(" -s %d-%d %s'\n", gmin, gmax, basename(name));
+		printf(" -s %d-%d %s'\n", gmin, gmax, basename((char*)name));
 	}
 
 	// parse file header up to 'CHARS' keyword
@@ -198,7 +215,8 @@ bdfe_t *bdf_convert(const char *name, unsigned gmin, unsigned gmax, unsigned asc
 	while(fgets(buf, sizeof(buf) - 2, fp) != NULL) {
 		if (key_arg(buf, "STARTCHAR", &arg)) {
 			unsigned displacement = 0;
-			unsigned bitmap = 0, i = 0, idx = 0;
+			unsigned bitmap = 0, idx = 0;
+			int  i = 0;
 			unsigned bbw = 0;
 			int bbox = 0, bboy = 0;
 			uint8_t *gin = gbuf + gsize;
@@ -250,19 +268,31 @@ bdfe_t *bdf_convert(const char *name, unsigned gmin, unsigned gmax, unsigned asc
 					gin -= displacement + ascender;
 					if (flags & BDF_ROTATE) {
 						gh = rotate_glyph(gin, dx, dy, gout);
+						if (flags & BDF_FLIP) {
+							flip_glyph(gout, gw);
+						}
 						gw = 8;
 					}
 					else
 						memcpy(gout, gin, dy);
 
+					char adjust = flags & BDF_DROPLAST?-1:0;
 					if (!mute) {
 						// glyph per line
 						if (flags & BDF_GPL) {
 							printf("\t");
-							for(i = 0; i < gh; i++) {
-								if ((i == gh/2) && (flags & BDF_ROTATE))
-									printf("\n\t");
-								printf("0x%02X,", gout[i]);
+							if (flags & BDF_FLIP) {
+								for(i = gh+adjust-1; i >= 0; i--) {
+									if ((i == gh/2) && (flags & BDF_ROTATE))
+										printf("\n\t");
+									printf("0x%02X,", gout[i]);
+								}
+							} else {
+								for(i = 0; i < gh+adjust; i++) {
+									if ((i == gh/2) && (flags & BDF_ROTATE))
+										printf("\n\t");
+									printf("0x%02X,", gout[i]);
+								}
 							}
 							printf(" // %5d", idx);
 							if (isprint(idx))
@@ -274,15 +304,28 @@ bdfe_t *bdf_convert(const char *name, unsigned gmin, unsigned gmax, unsigned asc
 							for(i = 0; i < gw; i++)
 								printf("%d", i);
 							printf("|\n");
-							for(i = 0; i < gh; i++) {
-								printf(" 0x%02X, //  %2d|", gout[i], i);
-								for(unsigned bit = 0; bit < gw; bit++) {
-									if (gout[i] & (0x80 >> bit))
-										printf("#");
-									else
-										printf(" ");
+							if (flags & BDF_FLIP) {
+								for(i = gh+adjust-1; i>=0; i--) {
+									printf(" 0x%02X, //  %2d|", gout[i], i);
+									for(unsigned bit = 0; bit < gw; bit++) {
+										if (gout[i] & (0x80 >> bit))
+											printf("#");
+										else
+											printf(" ");
+									}
+									printf("|\n");
 								}
-								printf("|\n");
+							} else {							
+								for(i = 0; i < gh+adjust; i++) {
+									printf(" 0x%02X, //  %2d|", gout[i], i);
+									for(unsigned bit = 0; bit < gw; bit++) {
+										if (gout[i] & (0x80 >> bit))
+											printf("#");
+										else
+											printf(" ");
+									}
+									printf("|\n");
+								}
 							}
 							printf("\n");
 						}

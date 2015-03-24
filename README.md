@@ -1,3 +1,14 @@
+changes in this fork
+--------------------
+
+For a project, I needed to convert a bdf font to a C array.  I needed a specific bit order and rotation.  I also wanted to truncate the last byte since it was always 0x00 for all glyphs. 
+
+Also, I wanted it to run on MacOS, so I modified the Makefile and some of the source files to compile appropriately.
+
+This is not meant to be well tested or bullet-proof.  I pretty much just hacked in support for the things I needed.  I make no claims of it being of any use to anyone else.  Use it at your own risk. 
+
+original READNE follows.
+
 bdfe
 ----
 

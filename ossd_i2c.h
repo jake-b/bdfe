@@ -43,8 +43,10 @@ extern "C" {
 #define OSSD_RPI	 2 /*< Raspberry Pi */
 #define OSSD_GALILEO 3 /*< Reserved for Intel Galileo */
 
-#ifdef __AVR_ARCH__
+#if defined(__AVR_ARCH__)
 	#define OSSD_TARGET OSSD_AVR
+#elif defined(__MACOS_X__)
+  #define OSSD_TARGET OSSD_MACOS
 #else
 	#define OSSD_TARGET OSSD_RPI
 #endif

@@ -35,6 +35,9 @@
 	/etc/modprobe.d/i2c.conf
 		options i2c_bcm2708 baudrate=400000
 */
+
+#ifndef __MACOS_X__
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -100,3 +103,5 @@ int pi2c_write(uint8_t bus, const uint8_t *data, uint32_t len)
 
 	return 0;
 }
+
+#endif

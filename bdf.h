@@ -41,6 +41,8 @@ extern "C" {
 #define BDF_HEADER   0x08 /*< output file header */
 #define BDF_VERBOSE  0x10 /*< verbose glyphs/header output */
 #define BDF_GPL      0x20 /*< one line per glyph */
+#define BDF_FLIP     0x40 /*< flip glyphs  */
+#define BDF_DROPLAST 0x80 /*< drop last byte from glyph */
 
 
 typedef struct bdfe_s
