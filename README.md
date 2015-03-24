@@ -7,7 +7,7 @@ Also, I wanted it to run on MacOS, so I modified the Makefile and some of the so
 
 This is not meant to be well tested or bullet-proof.  I pretty much just hacked in support for the things I needed.  I make no claims of it being of any use to anyone else.  Use it at your own risk. 
 
-original READNE follows.
+original README follows.
 
 bdfe
 ----
